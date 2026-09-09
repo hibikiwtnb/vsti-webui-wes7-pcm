@@ -78,8 +78,6 @@ def build_muscriptor_result_html(
                 "not_detected",
                 "solo",
                 "mute",
-                "download",
-                "download_midi",
                 "ready",
                 "linked_source",
                 "zoom_help",
@@ -154,8 +152,6 @@ body .muscriptor-instrument-selector input {
 .msr-meta { margin-top:2px; color:#6a7780; font-family:Arial,Helvetica,'Noto Sans TC',sans-serif; font-size:12px; line-height:1.3; }
 .msr-row .msr-btn { flex:0 0 auto; min-width:30px; padding:4px 7px; text-align:center; }
 .msr-row.muted .msr-name { opacity:.2; }
-.msr-downloads { display:flex; flex-wrap:wrap; gap:9px; padding:13px 0 0; }
-.msr-downloads a { text-decoration:none; }
 @media (max-width:760px) { .msr-grid { grid-template-columns:1fr; } }
 """
 
@@ -197,8 +193,8 @@ MUSCRIPTOR_RESULT_JS = r"""
     if(this.m.sourceTrackName){this.host.appendChild(el("div","msr-source",s.linked_source.replace("{track}",this.m.sourceTrackName).replace("{backend}",this.m.backendLabel)));}
     var bar=el("div","msr-toolbar"); this.play=button(s.play);this.play.disabled=true;this.play.onclick=function(){self.toggle();};bar.appendChild(this.play);
     this.synthSelect=el("select","msr-synth");[["yamaha-syxg2006le","Yamaha S-YXG2006LE"]].forEach(function(item){var option=el("option","",item[1]);option.value=item[0];self.synthSelect.appendChild(option);});this.synthSelect.value=this.synth;this.synthSelect.onchange=function(){self.setSynth(this.value);};bar.appendChild(this.synthSelect);
-    var bpm=el("label","msr-delay","BPM");this.bpmInput=el("input");this.bpmInput.type="number";this.bpmInput.min="20";this.bpmInput.max="300";this.bpmInput.step=".1";this.bpmInput.value=String(this.bpm);this.bpmInput.setAttribute("aria-label","BPM");this.bpmInput.oninput=function(){var value=parseFloat(this.value);if(!Number.isFinite(value))return;self.bpm=clamp(value,20,300);self.saveGridSettings();self.updateMidiDownload();self.scheduleDraw();};bpm.appendChild(this.bpmInput);bar.appendChild(bpm);
-    var firstBeat=el("label","msr-delay","第一拍");this.firstBeatInput=el("input");this.firstBeatInput.type="number";this.firstBeatInput.min="-60";this.firstBeatInput.max="60";this.firstBeatInput.step=".01";this.firstBeatInput.value=String(this.firstBeatDelay);this.firstBeatInput.setAttribute("aria-label","第一拍延遲秒數");this.firstBeatInput.oninput=function(){var value=parseFloat(this.value);if(!Number.isFinite(value))return;self.firstBeatDelay=clamp(value,-60,60);self.saveGridSettings();self.updateMidiDownload();self.scheduleDraw();};firstBeat.appendChild(this.firstBeatInput);firstBeat.appendChild(document.createTextNode("秒"));bar.appendChild(firstBeat);
+    var bpm=el("label","msr-delay","BPM");this.bpmInput=el("input");this.bpmInput.type="number";this.bpmInput.min="20";this.bpmInput.max="300";this.bpmInput.step=".1";this.bpmInput.value=String(this.bpm);this.bpmInput.setAttribute("aria-label","BPM");this.bpmInput.oninput=function(){var value=parseFloat(this.value);if(!Number.isFinite(value))return;self.bpm=clamp(value,20,300);self.saveGridSettings();self.scheduleDraw();};bpm.appendChild(this.bpmInput);bar.appendChild(bpm);
+    var firstBeat=el("label","msr-delay","第一拍");this.firstBeatInput=el("input");this.firstBeatInput.type="number";this.firstBeatInput.min="-60";this.firstBeatInput.max="60";this.firstBeatInput.step=".01";this.firstBeatInput.value=String(this.firstBeatDelay);this.firstBeatInput.setAttribute("aria-label","第一拍延遲秒數");this.firstBeatInput.oninput=function(){var value=parseFloat(this.value);if(!Number.isFinite(value))return;self.firstBeatDelay=clamp(value,-60,60);self.saveGridSettings();self.scheduleDraw();};firstBeat.appendChild(this.firstBeatInput);firstBeat.appendChild(document.createTextNode("秒"));bar.appendChild(firstBeat);
     var delay=el("label","msr-delay","畫面延遲");this.delayInput=el("input");this.delayInput.type="number";this.delayInput.min="0";this.delayInput.max="30";this.delayInput.step=".1";this.delayInput.value=String(this.visualDelay);this.delayInput.setAttribute("aria-label","畫面延遲秒數");this.delayInput.oninput=function(){var value=parseFloat(this.value);if(!Number.isFinite(value))return;self.visualDelay=clamp(value,0,30);try{localStorage.setItem("yamahaVisualDelaySeconds",String(self.visualDelay));}catch(e){}};delay.appendChild(this.delayInput);delay.appendChild(document.createTextNode("秒"));bar.appendChild(delay);
     var follow=button(s.follow);follow.classList.add("active");follow.onclick=function(){self.follow=!self.follow;follow.classList.toggle("active",self.follow);};bar.appendChild(follow);
     this.clock=el("span","msr-clock","0.0s");bar.appendChild(this.clock);this.status=el("div","msr-status","");
@@ -209,11 +205,10 @@ MUSCRIPTOR_RESULT_JS = r"""
     scroll.addEventListener("wheel",function(e){self.onWheel(e);},{passive:false});
     scroll.title=s.zoom_help;grid.appendChild(scroll);
     var aside=el("aside","msr-instruments");aside.appendChild(el("h3","",s.instruments));this.m.instruments.forEach(function(i,index){var row=el("div","msr-row"+(i.detected?"":" undetected"));row.dataset.instrument=i.id;row.title=i.id;var sw=el("span","msr-swatch");sw.style.background=i.detected?i.color:"#4b5157";row.appendChild(sw);var info=el("div","msr-instrument-info"),name=el("span","msr-name",i.label);name.title=i.id;info.appendChild(name);var midi=(i.midi||[]).map(function(item){var channel=Number(item.channel)+1;if(channel===10)return "Ch 10 · Drum Kit";return "Ch "+channel+" · Program "+(Number(item.program)+1)+" "+item.program_name;}).join(" | ");if(midi)info.appendChild(el("div","msr-meta",midi));row.appendChild(info);if(!i.detected){row.appendChild(el("small","",s.not_detected));}else{var solo=button("S",s.solo),mute=button("M",s.mute);solo.onclick=function(){self.toggleSolo(i.id);};mute.onclick=function(){self.toggleMute(i.id);};row.appendChild(solo);row.appendChild(mute);i.row=row;i.soloButton=solo;i.muteButton=mute;}aside.appendChild(row);});grid.appendChild(aside);this.host.appendChild(grid);
-    var dl=el("div","msr-downloads");this.midiDownload=el("a","msr-btn",s.download_midi);this.midiDownload.download="";dl.appendChild(this.midiDownload);this.updateMidiDownload();this.host.appendChild(dl);this.host.appendChild(this.status);
+    this.host.appendChild(this.status);
     this.resizeObserver=new ResizeObserver(function(){self.layout();});this.resizeObserver.observe(scroll);this.layout();
   };
   ResultSession.prototype.saveGridSettings=function(){try{localStorage.setItem(this.gridStorageKey,JSON.stringify({bpm:this.bpm,firstBeatDelay:this.firstBeatDelay}));}catch(e){}};
-  ResultSession.prototype.updateMidiDownload=function(){if(!this.midiDownload)return;var params=new URLSearchParams({midi_url:this.m.downloads.midi,bpm:String(this.bpm),first_beat:String(this.firstBeatDelay)});this.midiDownload.href="/api/midi-fix?"+params.toString();};
   ResultSession.prototype.synthLabel=function(){return "Yamaha S-YXG2006LE";};
   ResultSession.prototype.attachSynthAudio=function(){
     this.audio=el("audio","msr-audio");this.audio.preload="auto";this.host.appendChild(this.audio);
