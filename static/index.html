@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VSTi WebUI</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/static/style.css?v=4">
+</head>
+<body>
+  <header class="bar">
+    <select id="result" aria-label="MIDI library"></select>
+    <button class="primary" id="open" type="button">Open</button>
+    <label class="file-picker">
+      <input id="midi" type="file" accept="audio/midi,audio/x-midi,.mid,.midi">
+      <span>Select a MIDI file</span>
+    </label>
+    <button id="upload" type="button">Upload MIDI</button>
+    <button class="danger" id="delete" type="button">Delete selected</button>
+  </header>
+  <div id="message" role="status"></div>
+  <iframe id="frame" title="Yamaha MIDI workbench"></iframe>
+  <script src="/static/app.js?v=4"></script>
+</body>
+</html>

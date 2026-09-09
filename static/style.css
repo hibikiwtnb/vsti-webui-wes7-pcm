@@ -1,0 +1,142 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #fff;
+  color: #243746;
+  font-family: Arial, Helvetica, "Noto Sans TC", sans-serif;
+  font-size: 14px;
+}
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 9px 10px;
+  background: #fff;
+  border-bottom: 1px solid #d5dce3;
+}
+
+select {
+  flex: 1;
+  min-width: 180px;
+  height: 32px;
+  padding: 4px 28px 4px 8px;
+  color: #243746;
+  background: #fff;
+  border: 1px solid #b9c4cc;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+button,
+.file-picker {
+  height: 32px;
+  padding: 5px 11px;
+  color: #0069aa;
+  background: #fff;
+  border: 1px solid #1683bd;
+  border-radius: 4px;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:hover,
+.file-picker:hover {
+  color: #00527f;
+  background: #edf7fc;
+  border-color: #0069aa;
+}
+
+button.primary {
+  color: #fff;
+  background: #0069aa;
+  border-color: #0069aa;
+  font-weight: 600;
+}
+
+button.primary:hover {
+  background: #005f91;
+  border-color: #00527f;
+}
+
+button.danger {
+  color: #a00000;
+  border-color: #d39a9a;
+}
+
+button.danger:hover {
+  background: #fff2f2;
+  border-color: #bd6f6f;
+}
+
+.file-picker {
+  display: flex;
+  align-items: center;
+  max-width: 280px;
+  overflow: hidden;
+}
+
+.file-picker input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.file-picker span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#message {
+  min-height: 0;
+  padding: 0 10px;
+  color: #4b5963;
+}
+
+#message:not(:empty) {
+  min-height: 32px;
+  padding-top: 8px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid #e5eaee;
+}
+
+iframe {
+  display: block;
+  width: 100%;
+  height: calc(100vh - 51px);
+  background: #fff;
+  border: 0;
+}
+
+.empty {
+  padding: 28px;
+  color: #666;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@media (max-width: 760px) {
+  .bar {
+    flex-wrap: wrap;
+  }
+
+  select {
+    flex-basis: calc(100% - 70px);
+  }
+
+  .file-picker {
+    flex: 1;
+  }
+}
