@@ -98,7 +98,6 @@ frame.addEventListener("load", () => {
   downloadButton.disabled = !frame.contentDocument?.querySelector(".msr-manifest");
 });
 
-document.querySelector("#open").addEventListener("click", openSelected);
 downloadButton.addEventListener("click", downloadMidi);
 select.addEventListener("change", openSelected);
 

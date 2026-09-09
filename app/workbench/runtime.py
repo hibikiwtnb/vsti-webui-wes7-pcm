@@ -114,7 +114,7 @@ body .muscriptor-instrument-selector input {
   color:#222; background:#fff; font-size:12px; min-height:34px;
 }
 .msr-root, .msr-host { background:#fff; }
-.msr-root { margin:6px 0; color:#222; font-family:Arial,Helvetica,'Noto Sans TC',sans-serif; }
+.msr-root { margin:6px 3px; color:#222; font-family:Arial,Helvetica,'Noto Sans TC',sans-serif; }
 .msr-source { color:#0069aa; font-weight:600; background:#fff; border:1px solid #d5dce3; border-radius:6px; padding:9px 12px; margin-bottom:10px; }
 .msr-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:9px; }
 .msr-btn { box-sizing:border-box; background:#fff; color:#0069aa; border:1px solid #1683bd; border-radius:4px; padding:6px 11px; cursor:pointer; box-shadow:none; font:inherit; line-height:1.25; }
@@ -124,12 +124,11 @@ body .muscriptor-instrument-selector input {
 .msr-btn.active { color:#fff; border-color:#0069aa; background:#0069aa; box-shadow:none; }
 .msr-toolbar > .msr-btn:first-child { color:#fff; border-color:#0069aa; background:#0069aa; }
 .msr-toolbar > .msr-btn:first-child:hover { border-color:#00527f; background:#005f91; }
-.msr-synth { height:32px; color:#234; border:1px solid #b9c4cc; border-radius:4px; background:#fff; padding:4px 8px; }
 .msr-delay { display:flex; align-items:center; gap:5px; color:#333; white-space:nowrap; }
 .msr-delay input { width:62px; height:32px; box-sizing:border-box; color:#234; border:1px solid #b9c4cc; border-radius:4px; background:#fff; padding:4px 7px; }
-.msr-synth:focus, .msr-delay input:focus { outline:2px solid rgba(0,105,170,.18); border-color:#1683bd; }
+.msr-delay input:focus { outline:2px solid rgba(0,105,170,.18); border-color:#1683bd; }
 .msr-clock { font-family:monospace; color:#334; border:1px solid #d5dce3; border-radius:4px; background:#f7f9fa; padding:6px 9px; }
-.msr-status { min-height:30px; box-sizing:border-box; margin-top:10px; color:#4b5963; border-top:1px solid #d5dce3; background:#fff; padding:8px 2px 2px; }
+.msr-status { margin-left:auto; max-width:420px; min-width:0; overflow:hidden; color:#4b5963; font-size:12px; line-height:32px; text-align:right; text-overflow:ellipsis; white-space:nowrap; }
 .msr-audio { position:absolute; width:1px; height:1px; opacity:.01; pointer-events:none; }
 .msr-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(300px,340px); gap:12px; margin-top:6px; }
 .msr-roll-scroll { overflow:auto; max-height:660px; border:1px solid #8ba5bf; border-radius:3px; background:#fff; scrollbar-color:#9aafc2 #edf2f6; scrollbar-width:thin; }
@@ -192,12 +191,11 @@ MUSCRIPTOR_RESULT_JS = r"""
     var self=this,s=this.m.strings;
     if(this.m.sourceTrackName){this.host.appendChild(el("div","msr-source",s.linked_source.replace("{track}",this.m.sourceTrackName).replace("{backend}",this.m.backendLabel)));}
     var bar=el("div","msr-toolbar"); this.play=button(s.play);this.play.disabled=true;this.play.onclick=function(){self.toggle();};bar.appendChild(this.play);
-    this.synthSelect=el("select","msr-synth");[["yamaha-syxg2006le","Yamaha S-YXG2006LE"]].forEach(function(item){var option=el("option","",item[1]);option.value=item[0];self.synthSelect.appendChild(option);});this.synthSelect.value=this.synth;this.synthSelect.onchange=function(){self.setSynth(this.value);};bar.appendChild(this.synthSelect);
     var bpm=el("label","msr-delay","BPM");this.bpmInput=el("input");this.bpmInput.type="number";this.bpmInput.min="20";this.bpmInput.max="300";this.bpmInput.step=".1";this.bpmInput.value=String(this.bpm);this.bpmInput.setAttribute("aria-label","BPM");this.bpmInput.oninput=function(){var value=parseFloat(this.value);if(!Number.isFinite(value))return;self.bpm=clamp(value,20,300);self.saveGridSettings();self.scheduleDraw();};bpm.appendChild(this.bpmInput);bar.appendChild(bpm);
     var firstBeat=el("label","msr-delay","第一拍");this.firstBeatInput=el("input");this.firstBeatInput.type="number";this.firstBeatInput.min="-60";this.firstBeatInput.max="60";this.firstBeatInput.step=".01";this.firstBeatInput.value=String(this.firstBeatDelay);this.firstBeatInput.setAttribute("aria-label","第一拍延遲秒數");this.firstBeatInput.oninput=function(){var value=parseFloat(this.value);if(!Number.isFinite(value))return;self.firstBeatDelay=clamp(value,-60,60);self.saveGridSettings();self.scheduleDraw();};firstBeat.appendChild(this.firstBeatInput);firstBeat.appendChild(document.createTextNode("秒"));bar.appendChild(firstBeat);
     var delay=el("label","msr-delay","畫面延遲");this.delayInput=el("input");this.delayInput.type="number";this.delayInput.min="0";this.delayInput.max="30";this.delayInput.step=".1";this.delayInput.value=String(this.visualDelay);this.delayInput.setAttribute("aria-label","畫面延遲秒數");this.delayInput.oninput=function(){var value=parseFloat(this.value);if(!Number.isFinite(value))return;self.visualDelay=clamp(value,0,30);try{localStorage.setItem("yamahaVisualDelaySeconds",String(self.visualDelay));}catch(e){}};delay.appendChild(this.delayInput);delay.appendChild(document.createTextNode("秒"));bar.appendChild(delay);
     var follow=button(s.follow);follow.classList.add("active");follow.onclick=function(){self.follow=!self.follow;follow.classList.toggle("active",self.follow);};bar.appendChild(follow);
-    this.clock=el("span","msr-clock","0.0s");bar.appendChild(this.clock);this.status=el("div","msr-status","");
+    this.clock=el("span","msr-clock","0.0s");bar.appendChild(this.clock);this.status=el("span","msr-status","");bar.appendChild(this.status);
     this.host.appendChild(bar);
     var grid=el("div","msr-grid"),scroll=el("div","msr-roll-scroll"),world=el("div","msr-roll-world"),viewport=el("div","msr-roll-viewport");
     this.canvas=el("canvas","msr-roll");this.playhead=el("div","msr-playhead");viewport.appendChild(this.canvas);viewport.appendChild(this.playhead);world.appendChild(viewport);scroll.appendChild(world);this.scroll=scroll;this.world=world;this.viewport=viewport;this.canvas.onclick=function(e){var r=self.canvas.getBoundingClientRect();self.seek((self.scroll.scrollLeft+e.clientX-r.left-LEFT)/self.pps);};
@@ -205,7 +203,6 @@ MUSCRIPTOR_RESULT_JS = r"""
     scroll.addEventListener("wheel",function(e){self.onWheel(e);},{passive:false});
     scroll.title=s.zoom_help;grid.appendChild(scroll);
     var aside=el("aside","msr-instruments");aside.appendChild(el("h3","",s.instruments));this.m.instruments.forEach(function(i,index){var row=el("div","msr-row"+(i.detected?"":" undetected"));row.dataset.instrument=i.id;row.title=i.id;var sw=el("span","msr-swatch");sw.style.background=i.detected?i.color:"#4b5157";row.appendChild(sw);var info=el("div","msr-instrument-info"),name=el("span","msr-name",i.label);name.title=i.id;info.appendChild(name);var midi=(i.midi||[]).map(function(item){var channel=Number(item.channel)+1;if(channel===10)return "Ch 10 · Drum Kit";return "Ch "+channel+" · Program "+(Number(item.program)+1)+" "+item.program_name;}).join(" | ");if(midi)info.appendChild(el("div","msr-meta",midi));row.appendChild(info);if(!i.detected){row.appendChild(el("small","",s.not_detected));}else{var solo=button("S",s.solo),mute=button("M",s.mute);solo.onclick=function(){self.toggleSolo(i.id);};mute.onclick=function(){self.toggleMute(i.id);};row.appendChild(solo);row.appendChild(mute);i.row=row;i.soloButton=solo;i.muteButton=mute;}aside.appendChild(row);});grid.appendChild(aside);this.host.appendChild(grid);
-    this.host.appendChild(this.status);
     this.resizeObserver=new ResizeObserver(function(){self.layout();});this.resizeObserver.observe(scroll);this.layout();
   };
   ResultSession.prototype.saveGridSettings=function(){try{localStorage.setItem(this.gridStorageKey,JSON.stringify({bpm:this.bpm,firstBeatDelay:this.firstBeatDelay}));}catch(e){}};
@@ -216,9 +213,6 @@ MUSCRIPTOR_RESULT_JS = r"""
     if(window.Hls&&window.Hls.isSupported()){this.hls=new window.Hls({liveSyncDurationCount:2,maxLiveSyncPlaybackRate:1,maxBufferLength:4,maxMaxBufferLength:8,backBufferLength:10});this.hls.loadSource(source);this.hls.attachMedia(this.audio);this.hls.on(window.Hls.Events.ERROR,function(_,data){if(data.fatal&&!self.disposed)self.status.textContent="Synth stream: "+data.details;});}
     else if(this.audio.canPlayType("application/vnd.apple.mpegurl"))this.audio.src=source;
     else this.status.textContent="HLS playback is unavailable";
-  };
-  ResultSession.prototype.setSynth=function(synth){
-    this.pause();this.synth=synth;this.synthSelect.value=synth;this.solo=null;this.muted.clear();this.syncRows();this.status.textContent=this.synthLabel()+" ready";
   };
   ResultSession.prototype.start=function(){
     var self=this,generation=++this.playbackGeneration;if(this.position>=this.m.duration)this.position=0;this.audioStartPosition=this.position;this.playing=true;this.waitingForAudio=true;this.play.textContent=this.m.strings.pause;window.dispatchEvent(new CustomEvent("music-to-midi-playback-start",{detail:{owner:this.ownerId,synth:true}}));this.status.textContent="Waiting for "+this.synthLabel()+" audio…";if(this.audio)this.audio.play().catch(function(){});
