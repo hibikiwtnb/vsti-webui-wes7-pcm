@@ -94,8 +94,9 @@ def build_muscriptor_result_html(
 
 
 MUSCRIPTOR_RESULT_CSS = r"""
+html, body { height:100%; }
 html body { padding:0; background:#fff; }
-body .share-shell { max-width:1600px; }
+body .share-shell { max-width:1600px; height:100%; min-height:0; display:flex; flex-direction:column; }
 body .muscriptor-instrument-selector {
   background:#fff; border:1px solid #d5dce3;
   border-radius:6px; padding:12px 14px; box-shadow:none;
@@ -113,10 +114,11 @@ body .muscriptor-instrument-selector [data-testid="token"] {
 body .muscriptor-instrument-selector input {
   color:#222; background:#fff; font-size:12px; min-height:34px;
 }
-.msr-root, .msr-host { background:#fff; }
-.msr-root { margin:6px 3px; color:#222; font-family:Arial,Helvetica,'Noto Sans TC',sans-serif; }
+.msr-root, .msr-host { min-height:0; background:#fff; }
+.msr-root { flex:1 1 auto; margin:6px 3px; color:#222; font-family:Arial,Helvetica,'Noto Sans TC',sans-serif; }
+.msr-host { height:100%; display:flex; flex-direction:column; }
 .msr-source { color:#0069aa; font-weight:600; background:#fff; border:1px solid #d5dce3; border-radius:6px; padding:9px 12px; margin-bottom:10px; }
-.msr-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:9px; }
+.msr-toolbar { flex:0 0 auto; display:flex; flex-wrap:wrap; align-items:center; gap:9px; }
 .msr-btn { box-sizing:border-box; background:#fff; color:#0069aa; border:1px solid #1683bd; border-radius:4px; padding:6px 11px; cursor:pointer; box-shadow:none; font:inherit; line-height:1.25; }
 .msr-btn:hover { background:#edf7fc; border-color:#0069aa; color:#00527f; }
 .msr-btn:active { background:#dcedf7; }
@@ -130,8 +132,8 @@ body .muscriptor-instrument-selector input {
 .msr-clock { font-family:monospace; color:#334; border:1px solid #d5dce3; border-radius:4px; background:#f7f9fa; padding:6px 9px; }
 .msr-status { margin-left:auto; max-width:420px; min-width:0; overflow:hidden; color:#4b5963; font-size:12px; line-height:32px; text-align:right; text-overflow:ellipsis; white-space:nowrap; }
 .msr-audio { position:absolute; width:1px; height:1px; opacity:.01; pointer-events:none; }
-.msr-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(300px,340px); gap:12px; margin-top:6px; }
-.msr-roll-scroll { overflow:auto; max-height:660px; border:1px solid #8ba5bf; border-radius:3px; background:#fff; scrollbar-color:#9aafc2 #edf2f6; scrollbar-width:thin; }
+.msr-grid { flex:1 1 auto; min-height:0; display:grid; grid-template-columns:minmax(0,1fr) minmax(300px,340px); gap:12px; margin-top:6px; }
+.msr-roll-scroll { height:100%; min-height:0; overflow:auto; border:1px solid #8ba5bf; border-radius:3px; background:#fff; scrollbar-color:#9aafc2 #edf2f6; scrollbar-width:thin; }
 .msr-roll-scroll::-webkit-scrollbar { width:12px; height:12px; }
 .msr-roll-scroll::-webkit-scrollbar-track { background:#edf2f6; border-radius:3px; }
 .msr-roll-scroll::-webkit-scrollbar-thumb { background:#9aafc2; border-radius:3px; border:2px solid #edf2f6; }
@@ -192,7 +194,7 @@ MUSCRIPTOR_RESULT_JS = r"""
     if(this.m.sourceTrackName){this.host.appendChild(el("div","msr-source",s.linked_source.replace("{track}",this.m.sourceTrackName).replace("{backend}",this.m.backendLabel)));}
     var bar=el("div","msr-toolbar"); this.play=button(s.play);this.play.disabled=true;this.play.onclick=function(){self.toggle();};bar.appendChild(this.play);
     var bpm=el("label","msr-delay","BPM");this.bpmInput=el("input");this.bpmInput.type="number";this.bpmInput.min="20";this.bpmInput.max="300";this.bpmInput.step=".1";this.bpmInput.value=String(this.bpm);this.bpmInput.setAttribute("aria-label","BPM");this.bpmInput.oninput=function(){var value=parseFloat(this.value);if(!Number.isFinite(value))return;self.bpm=clamp(value,20,300);self.saveGridSettings();self.scheduleDraw();};bpm.appendChild(this.bpmInput);bar.appendChild(bpm);
-    var firstBeat=el("label","msr-delay","第一拍");this.firstBeatInput=el("input");this.firstBeatInput.type="number";this.firstBeatInput.min="-60";this.firstBeatInput.max="60";this.firstBeatInput.step=".01";this.firstBeatInput.value=String(this.firstBeatDelay);this.firstBeatInput.setAttribute("aria-label","第一拍延遲秒數");this.firstBeatInput.oninput=function(){var value=parseFloat(this.value);if(!Number.isFinite(value))return;self.firstBeatDelay=clamp(value,-60,60);self.saveGridSettings();self.scheduleDraw();};firstBeat.appendChild(this.firstBeatInput);firstBeat.appendChild(document.createTextNode("秒"));bar.appendChild(firstBeat);
+    var firstBeat=el("label","msr-delay","第一拍");this.firstBeatInput=el("input");this.firstBeatInput.type="number";this.firstBeatInput.min="-60";this.firstBeatInput.max="60";this.firstBeatInput.step=".01";this.firstBeatInput.value=String(this.firstBeatDelay);this.firstBeatInput.setAttribute("aria-label","第一拍延遲秒數");this.firstBeatInput.oninput=function(){var value=parseFloat(this.value);if(!Number.isFinite(value))return;self.firstBeatDelay=clamp(value,-60,60);self.saveGridSettings();self.scheduleDraw();};firstBeat.appendChild(this.bpmInput);firstBeat.appendChild(document.createTextNode("秒"));bar.appendChild(firstBeat);
     var delay=el("label","msr-delay","畫面延遲");this.delayInput=el("input");this.delayInput.type="number";this.delayInput.min="0";this.delayInput.max="30";this.delayInput.step=".1";this.delayInput.value=String(this.visualDelay);this.delayInput.setAttribute("aria-label","畫面延遲秒數");this.delayInput.oninput=function(){var value=parseFloat(this.value);if(!Number.isFinite(value))return;self.visualDelay=clamp(value,0,30);try{localStorage.setItem("yamahaVisualDelaySeconds",String(self.visualDelay));}catch(e){}};delay.appendChild(this.delayInput);delay.appendChild(document.createTextNode("秒"));bar.appendChild(delay);
     var follow=button(s.follow);follow.classList.add("active");follow.onclick=function(){self.follow=!self.follow;follow.classList.toggle("active",self.follow);};bar.appendChild(follow);
     this.clock=el("span","msr-clock","0.0s");bar.appendChild(this.clock);this.status=el("span","msr-status","");bar.appendChild(this.status);
