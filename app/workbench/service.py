@@ -77,7 +77,7 @@ class RollNote:
 
 def read_roll_notes(
     path: Path,
-) -> tuple[list[RollNote], list[str], dict[str, list[dict[str, object]]], float]:
+) -> tuple[list[RollNote], list[str], dict[str, list[dict[str, object]]], float, float]:
     midi = mido.MidiFile(path)
     raw_events: list[tuple[int, int, int, str, mido.Message | mido.MetaMessage]] = []
     sequence = 0
@@ -98,6 +98,15 @@ def read_roll_notes(
 
     raw_events.sort(key=lambda item: (item[0], item[1], item[2]))
     tempo = 500000
+    display_tempo = next(
+        (
+            int(message.tempo)
+            for track in midi.tracks
+            for message in track
+            if message.type == "set_tempo"
+        ),
+        None,
+    )
     current_tick = 0
     current_seconds = 0.0
     active: dict[tuple[str, int, int], list[tuple[float, int]]] = {}
@@ -158,7 +167,8 @@ def read_roll_notes(
         for instrument in instruments
     }
     duration = max(current_seconds, max((note.end for note in notes), default=0.0))
-    return notes, instruments, instrument_metadata, duration
+    bpm = float(mido.tempo2bpm(display_tempo)) if display_tempo else ORIGINAL_MIDI_BPM
+    return notes, instruments, instrument_metadata, duration, bpm
 
 
 def build_bpm_fixed_midi(
@@ -219,7 +229,7 @@ def build_bpm_fixed_midi(
 
 
 def build_workbench_page(file_id: str, midi_path: Path, filename: str) -> str:
-    notes, instruments, instrument_metadata, duration = read_roll_notes(midi_path)
+    notes, instruments, instrument_metadata, duration, bpm = read_roll_notes(midi_path)
     if not notes:
         raise ValueError("MIDI contains no completed notes")
     state = {
@@ -240,6 +250,7 @@ def build_workbench_page(file_id: str, midi_path: Path, filename: str) -> str:
             for note in notes
         ],
         "duration": duration,
+        "bpm": bpm,
         "backend_label": "Local Yamaha VSTi",
         "source_track_name": "",
     }

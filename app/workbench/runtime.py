@@ -56,6 +56,7 @@ def build_muscriptor_result_html(
     manifest = {
         "notes": list(state.get("notes", [])),
         "duration": float(state.get("duration", 0.0)),
+        "bpm": float(state.get("bpm", 120.0)),
         "backendLabel": str(state.get("backend_label", "")),
         "sourceTrackName": str(state.get("source_track_name", "")),
         "instruments": instruments,
@@ -183,6 +184,7 @@ MUSCRIPTOR_RESULT_JS = r"""
   }
   ResultSession.prototype.init=function(){
     try { this.m=JSON.parse(this.root.querySelector(".msr-manifest").textContent); } catch(e){this.host.textContent=String(e);return;}
+    var manifestBpm=parseFloat(this.m.bpm);if(Number.isFinite(manifestBpm))this.bpm=clamp(manifestBpm,20,300);
     this.gridStorageKey="midiGrid:"+this.m.downloads.midi;try{var savedGrid=JSON.parse(localStorage.getItem(this.gridStorageKey)||"null");if(savedGrid){var savedBpm=parseFloat(savedGrid.bpm),savedFirstBeat=parseFloat(savedGrid.firstBeatDelay);if(Number.isFinite(savedBpm))this.bpm=clamp(savedBpm,20,300);if(Number.isFinite(savedFirstBeat))this.firstBeatDelay=clamp(savedFirstBeat,-60,60);}}catch(e){}
     this.noteIndex=this.m.notes.slice().sort(function(a,b){return a.start-b.start;});
     this.maxNoteDuration=this.noteIndex.reduce(function(value,n){return Math.max(value,n.end-n.start);},0);
