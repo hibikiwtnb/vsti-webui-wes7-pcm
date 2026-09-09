@@ -92,3 +92,17 @@ http://100.71.39.33:8789/
 - `static`: upload, picker, and iframe shell
 
 User MIDI files, HLS segments, logs, virtual environments, binaries, synth DLLs, and VM images are intentionally ignored by Git.
+## Command-line health check
+
+Run this when the browser does not play audio:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\Workspace\vsti-webui-wes7-pcm\Test-VstiHealth.ps1
+```
+
+To send a short MIDI playback request and verify non-silent PCM reaches the host:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\Workspace\vsti-webui-wes7-pcm\Test-VstiHealth.ps1 -PlayTest
+```
+
