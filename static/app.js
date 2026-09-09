@@ -5,7 +5,6 @@ const select = document.querySelector("#result");
 const frame = document.querySelector("#frame");
 const input = document.querySelector("#midi");
 const fileLabel = document.querySelector(".file-picker span");
-const message = document.querySelector("#message");
 
 async function api(path, options = {}) {
   const response = await fetch(path, options);
@@ -52,13 +51,11 @@ async function importMidi(file) {
   form.append("file", file);
   input.disabled = true;
   fileLabel.textContent = "Importing...";
-  message.textContent = `Uploading: ${file.name}`;
   try {
     const item = await api("/api/midi", { method: "POST", body: form });
-    message.textContent = `Uploaded: ${item.filename}`;
     await loadResults(item.id);
   } catch (error) {
-    message.textContent = error.message;
+    console.error("MIDI import failed:", error);
   } finally {
     input.value = "";
     input.disabled = false;
@@ -79,16 +76,15 @@ document.querySelector("#delete").addEventListener("click", async () => {
   const title = select.options[select.selectedIndex]?.textContent || id;
   if (!id || !window.confirm(`Delete this MIDI file?\n\n${title}`)) return;
   try {
-    const result = await api(`/api/midi/${encodeURIComponent(id)}`, {
+    await api(`/api/midi/${encodeURIComponent(id)}`, {
       method: "DELETE",
     });
-    message.textContent = `Deleted: ${result.deleted}`;
     await loadResults();
   } catch (error) {
-    message.textContent = error.message;
+    console.error("MIDI delete failed:", error);
   }
 });
 
 loadResults().catch((error) => {
-  message.textContent = error.message;
+  console.error("MIDI library load failed:", error);
 });
