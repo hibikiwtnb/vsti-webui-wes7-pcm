@@ -181,6 +181,13 @@ if ($PlayTest) {
                 Write-Check 'Play non-silent PCM' 'FAIL' ('file={0} delta={1}' -f $FileId, $delta)
                 Add-Failure 'PlayTest did not produce non-silent PCM.'
             }
+            try {
+                Invoke-RestMethod -Uri ($webUrl + '/api/synth/stop') -Method Post -TimeoutSec 3 | Out-Null
+                Write-Check 'Play test cleanup' 'OK' 'stopped test playback'
+            } catch {
+                Write-Check 'Play test cleanup' 'WARN' $_.Exception.Message
+                Add-Warning 'PlayTest could not stop playback after the probe.'
+            }
         } catch {
             Write-Check 'Play request' 'FAIL' $_.Exception.Message
             Add-Failure 'PlayTest request failed.'

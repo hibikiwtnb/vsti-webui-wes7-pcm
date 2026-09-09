@@ -143,11 +143,13 @@ class MidiPlayback:
         resolved_port = self._resolve_port()
         if resolved_port is None:
             raise ServiceUnavailableError(f'MIDI port "{self.port_name}" is not available.')
+        with self._state_lock:
+            is_playing = self._state.status == "playing"
+        if is_playing:
+            self.stop()
         events, tracks, duration = read_midi_events(path)
         start_seconds = max(0.0, min(float(start_seconds), duration))
         with self._state_lock:
-            if self._state.status == "playing":
-                raise ConflictError("Another MIDI file is already playing.")
             is_new_file = self._state.file_id != file_id
             if is_new_file:
                 self._muted.clear()
@@ -175,10 +177,18 @@ class MidiPlayback:
 
     def stop(self) -> None:
         self._stop.set()
-        self._all_notes_off()
+        try:
+            self._all_notes_off()
+        except Exception as exc:
+            with self._state_lock:
+                self._state.error = f"Stop all-notes-off failed: {exc}"
         thread = self._thread
         if thread and thread.is_alive() and thread is not current_thread():
-            thread.join(timeout=2)
+            try:
+                thread.join(timeout=2)
+            except RuntimeError as exc:
+                with self._state_lock:
+                    self._state.error = f"Stop thread join failed: {exc}"
         self._thread = None
         with self._state_lock:
             if self._state.status == "playing":
@@ -186,7 +196,7 @@ class MidiPlayback:
                     self._state.duration_seconds,
                     max(0.0, time.monotonic() - self._started_at),
                 )
-                self._state.status = "idle"
+            self._state.status = "idle"
 
     def set_mix(self, muted_tracks: list[str], solo: str | None) -> dict:
         requested_muted = set(muted_tracks)
