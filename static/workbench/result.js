@@ -11,6 +11,9 @@
     MIN_PPS = 46,
     MAX_PPS = 368,
     ZOOM_STEP = 1.15,
+    PIANO_MIN = 21,
+    PIANO_MAX = 108,
+    PIANO_HEIGHT = 72,
     BLACK_PITCHES = new Set([1, 3, 6, 8, 10]);
   var TRACK_COLORS = [
     "#1976d2",
@@ -89,6 +92,8 @@
     this.noteIndex = [];
     this.maxNoteDuration = 0;
     this.instrumentColors = {};
+    this.chordInstruments = new Set();
+    this.pianometerSignature = "";
     this.backgroundCanvas = null;
     this.viewportWidth = 950;
     this.maxScroll = 0;
@@ -128,6 +133,15 @@
     this.m.instruments.forEach(function (i, index) {
       i.color = TRACK_COLORS[index % TRACK_COLORS.length];
       self.instrumentColors[i.id] = i.color;
+      var midi = i.midi || [],
+        chordSuitable =
+          !midi.length ||
+          midi.some(function (item) {
+            var channel = Number(item.channel),
+              program = Number(item.program);
+            return channel !== 9 && (!Number.isFinite(program) || program < 112);
+          });
+      if (chordSuitable) self.chordInstruments.add(i.id);
     });
     this.build();
     this.attachSynthAudio();
@@ -316,6 +330,17 @@
     });
     grid.appendChild(aside);
     this.host.appendChild(grid);
+    var pianometer = el("div", "msr-pianometer"),
+      pianometerMain = el("div", "msr-pianometer-main");
+    this.chord = el("div", "msr-chord", "");
+    this.chord.setAttribute("aria-live", "polite");
+    this.keyboardCanvas = el("canvas", "msr-keyboard");
+    this.keyboardCanvas.setAttribute("aria-label", "88-key piano keyboard");
+    pianometerMain.appendChild(this.chord);
+    pianometerMain.appendChild(this.keyboardCanvas);
+    pianometer.appendChild(pianometerMain);
+    this.pianometerMain = pianometerMain;
+    this.host.appendChild(pianometer);
     this.resizeObserver = new ResizeObserver(function () {
       self.layout();
     });
@@ -591,6 +616,7 @@
       i.muteButton.textContent = "M";
     });
     this.drawStatic();
+    this.updatePianometer();
   };
   ResultSession.prototype.tick = function () {
     if (!this.playing) return;
@@ -635,6 +661,7 @@
     this.rebuildBackground();
     this.drawStatic();
     this.layoutPlayhead();
+    this.layoutPianometer();
     if (!this.verticalPositionInitialized) {
       this.verticalPositionInitialized = true;
       var pitches = this.noteIndex
@@ -884,6 +911,138 @@
     this.playhead.style.visibility =
       x >= LEFT && x <= this.viewportWidth ? "visible" : "hidden";
     this.clock.textContent = this.position.toFixed(1) + "s";
+    this.updatePianometer();
+  };
+  ResultSession.prototype.layoutPianometer = function () {
+    if (!this.keyboardCanvas || !this.pianometerMain) return;
+    var width = Math.max(320, this.pianometerMain.clientWidth || 950),
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+    this.keyboardCanvas.style.width = width + "px";
+    this.keyboardCanvas.style.height = PIANO_HEIGHT + "px";
+    this.keyboardCanvas.width = Math.round(width * dpr);
+    this.keyboardCanvas.height = Math.round(PIANO_HEIGHT * dpr);
+    this.keyboardDpr = dpr;
+    this.pianometerSignature = "";
+    this.updatePianometer();
+  };
+  ResultSession.prototype.activePianoNotes = function () {
+    var end = this.findNoteStart(this.position + 1e-9),
+      start = this.findNoteStart(
+        Math.max(0, this.position - this.maxNoteDuration - 1e-9),
+      ),
+      active = [];
+    for (var index = start; index < end; index++) {
+      var note = this.noteIndex[index];
+      if (
+        note.start <= this.position &&
+        note.end > this.position &&
+        note.pitch >= PIANO_MIN &&
+        note.pitch <= PIANO_MAX &&
+        this.audible(note.instrument)
+      )
+        active.push(note);
+    }
+    return active;
+  };
+  ResultSession.prototype.updatePianometer = function () {
+    if (!this.keyboardCanvas) return;
+    var self = this,
+      active = this.activePianoNotes(),
+      colorsByPitch = new Map();
+    active.forEach(function (note) {
+      var colors = colorsByPitch.get(note.pitch) || [],
+        color = self.instrumentColors[note.instrument] || "#6f9fd8";
+      if (colors.indexOf(color) < 0) colors.push(color);
+      colorsByPitch.set(note.pitch, colors);
+    });
+    var chordPitches = Array.from(
+        new Set(
+          active
+            .filter(function (note) {
+              return self.chordInstruments.has(note.instrument);
+            })
+            .map(function (note) {
+              return note.pitch;
+            }),
+        ),
+      ).sort(function (a, b) {
+        return a - b;
+      }),
+      names = chordPitches.map(function (pitch) {
+        var names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        return names[pitch % 12] + (Math.floor(pitch / 12) - 1);
+      }),
+      detected =
+        names.length && window.Tonal
+          ? window.Tonal.Chord.detect(names, { assumePerfectFifth: true })
+          : [],
+      chord = detected.length ? detected[0] : "",
+      signature =
+        Array.from(colorsByPitch.entries())
+          .map(function (entry) {
+            return entry[0] + ":" + entry[1].join(",");
+          })
+          .join("|") +
+        ";" +
+        chord;
+    if (signature === this.pianometerSignature) return;
+    this.pianometerSignature = signature;
+    this.chord.textContent = chord;
+    this.drawPianoKeyboard(colorsByPitch);
+  };
+  ResultSession.prototype.drawPianoKeyboard = function (colorsByPitch) {
+    var p = this.keyboardCanvas.getContext("2d"),
+      d = this.keyboardDpr || 1,
+      width = this.keyboardCanvas.width / d,
+      whiteWidth = width / 52,
+      blackWidth = Math.max(3, whiteWidth * 0.62),
+      blackHeight = PIANO_HEIGHT * 0.62,
+      whiteIndex = 0,
+      whitePositions = {};
+    p.setTransform(d, 0, 0, d, 0, 0);
+    p.clearRect(0, 0, width, PIANO_HEIGHT);
+    for (var pitch = PIANO_MIN; pitch <= PIANO_MAX; pitch++) {
+      if (BLACK_PITCHES.has(pitch % 12)) continue;
+      var x = whiteIndex * whiteWidth,
+        colors = colorsByPitch.get(pitch) || [];
+      whitePositions[pitch] = x;
+      p.fillStyle = colors.length ? colors[0] : "#fafafa";
+      p.fillRect(x, 0, whiteWidth, PIANO_HEIGHT);
+      if (colors.length > 1) {
+        var stripeWidth = whiteWidth / colors.length;
+        colors.forEach(function (color, index) {
+          p.fillStyle = color;
+          p.fillRect(x + index * stripeWidth, 0, stripeWidth, PIANO_HEIGHT);
+        });
+      }
+      p.strokeStyle = "#7a8791";
+      p.lineWidth = 1;
+      p.strokeRect(x + 0.5, 0.5, Math.max(0, whiteWidth - 1), PIANO_HEIGHT - 1);
+      whiteIndex++;
+    }
+    for (var blackPitch = PIANO_MIN; blackPitch <= PIANO_MAX; blackPitch++) {
+      if (!BLACK_PITCHES.has(blackPitch % 12)) continue;
+      var previous = blackPitch - 1;
+      while (BLACK_PITCHES.has(previous % 12)) previous--;
+      var blackX = whitePositions[previous] + whiteWidth - blackWidth / 2,
+        blackColors = colorsByPitch.get(blackPitch) || [];
+      p.fillStyle = blackColors.length ? blackColors[0] : "#20262b";
+      p.fillRect(blackX, 0, blackWidth, blackHeight);
+      if (blackColors.length > 1) {
+        var blackStripeWidth = blackWidth / blackColors.length;
+        blackColors.forEach(function (color, index) {
+          p.fillStyle = color;
+          p.fillRect(
+            blackX + index * blackStripeWidth,
+            0,
+            blackStripeWidth,
+            blackHeight,
+          );
+        });
+      }
+      p.strokeStyle = "#111";
+      p.strokeRect(blackX + 0.5, 0.5, blackWidth - 1, blackHeight - 1);
+    }
   };
   ResultSession.prototype.dispose = function () {
     if (this.disposed) return;

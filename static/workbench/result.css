@@ -57,4 +57,10 @@ body .muscriptor-instrument-selector input {
 .msr-meta { margin-top:2px; color:#6a7780; font-family:Arial,Helvetica,'Noto Sans TC',sans-serif; font-size:12px; line-height:1.3; }
 .msr-row .msr-btn { flex:0 0 auto; min-width:30px; padding:4px 7px; text-align:center; }
 .msr-row.muted .msr-name { opacity:.2; }
-@media (max-width:760px) { .msr-grid { grid-template-columns:1fr; } }
+.msr-pianometer { flex:0 0 auto; display:grid; grid-template-columns:minmax(0,1fr) minmax(300px,340px); gap:12px; margin-top:4px; }
+.msr-pianometer-main { grid-column:1; position:relative; min-width:0; padding-top:20px; border:1px solid #8ba5bf; border-radius:3px; overflow:hidden; background:#27333c; box-sizing:border-box; }
+.msr-chord { position:absolute; top:0; left:0; right:0; height:20px; overflow:hidden; color:#fff; font-family:monospace; font-size:14px; font-weight:700; line-height:20px; text-align:center; text-overflow:ellipsis; white-space:nowrap; }
+.msr-keyboard { display:block; max-width:100%; background:#fafafa; }
+@media (max-width:760px) {
+  .msr-grid, .msr-pianometer { grid-template-columns:1fr; }
+}

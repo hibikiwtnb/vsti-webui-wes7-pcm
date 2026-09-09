@@ -94,7 +94,8 @@ def build_muscriptor_result_html(
 
 def muscriptor_result_head() -> str:
     return (
-        '<link rel="stylesheet" href="/static/workbench/result.css?v=1">'
+        '<link rel="stylesheet" href="/static/workbench/result.css?v=2">'
         '<script src="/static/vendor/hls.min.js"></script>'
-        '<script src="/static/workbench/result.js?v=1"></script>'
+        '<script src="/static/vendor/tonal.min.js"></script>'
+        '<script src="/static/workbench/result.js?v=2"></script>'
     )
