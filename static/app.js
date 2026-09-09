@@ -47,34 +47,32 @@ function openSelected() {
   frame.src = `/share/${encodeURIComponent(id)}/share.html`;
 }
 
-input.addEventListener("change", () => {
-  const file = input.files[0];
-  fileLabel.textContent = file ? file.name : "Select a MIDI file";
-  message.textContent = file ? `Selected: ${file.name}` : "";
-});
-
-document.querySelector("#open").addEventListener("click", openSelected);
-select.addEventListener("change", openSelected);
-
-document.querySelector("#upload").addEventListener("click", async () => {
-  const file = input.files[0];
-  if (!file) {
-    message.textContent = "Select a MIDI file first.";
-    return;
-  }
+async function importMidi(file) {
   const form = new FormData();
   form.append("file", file);
+  input.disabled = true;
+  fileLabel.textContent = "Importing...";
   message.textContent = `Uploading: ${file.name}`;
   try {
     const item = await api("/api/midi", { method: "POST", body: form });
-    input.value = "";
-    fileLabel.textContent = "Select a MIDI file";
     message.textContent = `Uploaded: ${item.filename}`;
     await loadResults(item.id);
   } catch (error) {
     message.textContent = error.message;
+  } finally {
+    input.value = "";
+    input.disabled = false;
+    fileLabel.textContent = "Import MIDI";
   }
+}
+
+input.addEventListener("change", () => {
+  const file = input.files[0];
+  if (file) void importMidi(file);
 });
+
+document.querySelector("#open").addEventListener("click", openSelected);
+select.addEventListener("change", openSelected);
 
 document.querySelector("#delete").addEventListener("click", async () => {
   const id = select.value;
