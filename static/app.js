@@ -5,6 +5,7 @@ const select = document.querySelector("#result");
 const frame = document.querySelector("#frame");
 const input = document.querySelector("#midi");
 const fileLabel = document.querySelector(".file-picker span");
+const downloadButton = document.querySelector("#download");
 
 async function api(path, options = {}) {
   const response = await fetch(path, options);
@@ -26,6 +27,7 @@ async function loadResults(preferredId) {
   }
   if (!data.items.length) {
     localStorage.removeItem(selectedResultStorageKey);
+    downloadButton.disabled = true;
     frame.removeAttribute("src");
     frame.srcdoc = '<div class="empty">No MIDI files yet.</div>';
     return;
@@ -42,8 +44,32 @@ function openSelected() {
   const id = select.value;
   if (!id) return;
   localStorage.setItem(selectedResultStorageKey, id);
+  downloadButton.disabled = true;
   frame.removeAttribute("srcdoc");
   frame.src = `/share/${encodeURIComponent(id)}/share.html`;
+}
+
+function downloadMidi() {
+  try {
+    const doc = frame.contentDocument;
+    const manifestNode = doc?.querySelector(".msr-manifest");
+    if (!manifestNode) return;
+    const manifest = JSON.parse(manifestNode.textContent);
+    const bpm = doc.querySelector('input[aria-label="BPM"]')?.value || manifest.bpm;
+    const firstBeat =
+      doc.querySelector('input[aria-label="第一拍延遲秒數"]')?.value || 0;
+    const params = new URLSearchParams({
+      midi_url: manifest.downloads.midi,
+      bpm: String(bpm),
+      first_beat: String(firstBeat),
+    });
+    const link = document.createElement("a");
+    link.href = `/api/midi-fix?${params.toString()}`;
+    link.download = "";
+    link.click();
+  } catch (error) {
+    console.error("MIDI download failed:", error);
+  }
 }
 
 async function importMidi(file) {
@@ -68,7 +94,12 @@ input.addEventListener("change", () => {
   if (file) void importMidi(file);
 });
 
+frame.addEventListener("load", () => {
+  downloadButton.disabled = !frame.contentDocument?.querySelector(".msr-manifest");
+});
+
 document.querySelector("#open").addEventListener("click", openSelected);
+downloadButton.addEventListener("click", downloadMidi);
 select.addEventListener("change", openSelected);
 
 document.querySelector("#delete").addEventListener("click", async () => {
