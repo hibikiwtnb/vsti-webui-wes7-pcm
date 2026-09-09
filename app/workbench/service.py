@@ -12,7 +12,7 @@ from app.playback.service import normalize_track_name
 from app.workbench.runtime import build_muscriptor_result_html, muscriptor_result_head
 
 
-ORIGINAL_MIDI_BPM = 120.0
+DEFAULT_MIDI_TEMPO = 500000
 
 GM_PROGRAM_NAMES = (
     "Acoustic Grand Piano", "Bright Acoustic Piano", "Electric Grand Piano", "Honky-tonk Piano",
@@ -97,7 +97,7 @@ def read_roll_notes(
             sequence += 1
 
     raw_events.sort(key=lambda item: (item[0], item[1], item[2]))
-    tempo = 500000
+    tempo = DEFAULT_MIDI_TEMPO
     display_tempo = next(
         (
             int(message.tempo)
@@ -167,7 +167,7 @@ def read_roll_notes(
         for instrument in instruments
     }
     duration = max(current_seconds, max((note.end for note in notes), default=0.0))
-    bpm = float(mido.tempo2bpm(display_tempo)) if display_tempo else ORIGINAL_MIDI_BPM
+    bpm = float(mido.tempo2bpm(display_tempo or DEFAULT_MIDI_TEMPO))
     return notes, instruments, instrument_metadata, duration, bpm
 
 
@@ -177,8 +177,16 @@ def build_bpm_fixed_midi(
     first_beat_delay: float,
 ) -> bytes:
     midi = mido.MidiFile(midi_path)
-    scale = target_bpm / ORIGINAL_MIDI_BPM
-    target_tempo = mido.bpm2tempo(target_bpm)
+    source_tempo = next(
+        (
+            int(message.tempo)
+            for track in midi.tracks
+            for message in track
+            if message.type == "set_tempo"
+        ),
+        DEFAULT_MIDI_TEMPO,
+    )
+    target_tempo = int(mido.bpm2tempo(target_bpm))
     bar_ticks = midi.ticks_per_beat * 4
     user_offset_ticks = int(
         round(first_beat_delay * midi.ticks_per_beat * target_bpm / 60.0)
@@ -187,10 +195,13 @@ def build_bpm_fixed_midi(
     earliest_note_tick: int | None = None
 
     for track in midi.tracks:
-        absolute_tick = 0
+        source_absolute_tick = 0
         scaled_events: list[tuple[int, mido.Message | mido.MetaMessage]] = []
         for message in track:
-            absolute_tick += int(round(message.time * scale))
+            source_absolute_tick += message.time
+            absolute_tick = (
+                source_absolute_tick * source_tempo + target_tempo // 2
+            ) // target_tempo
             copied = message.copy(time=0)
             if copied.type != "set_tempo":
                 scaled_events.append((absolute_tick, copied))
